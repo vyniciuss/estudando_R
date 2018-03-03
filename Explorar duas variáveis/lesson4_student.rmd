@@ -1,0 +1,392 @@
+---
+output:
+  html_document: default
+---
+Lesson 4
+========================================================
+
+***
+
+### Scatterplots and Perceived Audience Size
+Notes:
+
+***
+
+### Scatterplots
+Notes:
+
+```{r Scatterplots}
+
+install.packages('alr3')
+
+library(ggplot2)
+pf <- read.csv('pseudo_facebook.tsv', sep = '\t')
+
+qplot(x = age, y = friend_count, data = pf)
+
+#The equivalent ggplot syntax for the scatterplot: 
+
+ggplot(aes(x = age, y = friend_count), data = pf) + 
+  geom_point()
+
+```
+
+***
+
+#### What are some things that you notice right away?
+Response: os jovens possuem mais amigos
+
+***
+
+### ggplot Syntax
+Notes:
+
+```{r ggplot Syntax}
+#Para visualizar os extremos dos dados iremos utilizar a função summary.
+
+summary(pf$age)
+
+#vemos que o menor valor é 13 anos e o maior é 113, isso parece correto para o valor menor, mas o maior parece sujeira, para isso vamos limitar os valores entre 13 e 90 anos
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+   geom_point() +
+  xlim(13, 90)
+
+```
+
+***
+
+### Overplotting
+Notes:
+
+```{r Overplotting}
+#alpha 1/20 indica que precisa de 20 pontos para o círculo aparecer completamente escuro
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  geom_jitter(alpha = 1/20) +
+  xlim(13, 90)
+```
+
+#### What do you notice in the plot?
+Response:
+
+***
+
+### Coord_trans()
+Notes:
+
+```{r Coord_trans()}
+#como algumas pessoas tem 0 amigos, precisamos trocar de geom_jitter para geom_point.
+#com esse ajuste evitamos números negativos e calculos errados de raiz quadrada, para funcionar bem
+#precisamos position = position_jitter(h = 0) que indica que a altura(h=heigth) mínima do eixo y é 0
+
+ggplot(aes(x = age, y = friend_count), data = pf) +
+   geom_point(alpha = 1/20, position = position_jitter(h = 0)) +
+  xlim(13, 90) +
+  coord_trans(y = "sqrt")
+
+```
+
+#### Look up the documentation for coord_trans() and add a layer to the plot that transforms friend_count using the square root function. Create your plot!
+
+```{r}
+
+```
+
+#### What do you notice?
+
+***
+
+### Alpha and Jitter
+Notes:
+
+```{r Alpha and Jitter}
+qplot(x = age, y = friendships_initiated, data = pf)
+
+
+ggplot(aes(x = age, y = friendships_initiated), data = pf) +
+   geom_point(alpha = 1/10, position = position_jitter(h = 0)) +
+  xlim(13, 90) +
+  coord_trans(y = "sqrt")
+
+
+```
+
+***
+
+### Overplotting and Domain Knowledge
+Notes:
+
+***
+
+### Conditional Means
+Notes:
+
+```{r Conditional Means}
+
+#dplyr é uma biblioteca para tratamento dos datasets como: agrupamento, ordenação, filtragem e etc.
+
+install.packages('dplyr')
+library(dplyr)
+
+#agrupa os dados por age
+age_groups <- group_by(pf, age)
+
+#cria uma tabela com dados estatísticos  de friend_count a tabela conterá 4 variáveis: age, fried_count_mean, friend_count_median e n que representa o total de registros em cada grupo
+pf.fc_age <- summarise(age_groups,
+                      fried_count_mean = mean(friend_count),
+                      friend_count_median = median(friend_count),
+                      n = n())
+
+head(pf.fc_age)
+
+#com a execução da linha acima percebemos que os dados estão desordenados e precisamos ordená-los por age
+pf.fc_age <- arrange(pf.fc_age, age)
+
+
+#outra forma de criar a mesma tabela:
+pf.fc_by_age <- pf %>%
+    group_by(age) %>%
+    summarise(friend_count_mean = mean(friend_count),
+              friend_count_median = median(friend_count),
+              n = n()) %>%
+  arrange(age)
+
+head(pf.fc_by_age)
+
+```
+
+Create your plot!
+
+```{r Conditional Means Plot}
+
+
+qplot(x = age, y = fried_count_mean, data = pf.fc_by_age)
+
+qplot(x = age, y = friend_count_median, data = pf.fc_by_age)
+
+
+ggplot(aes(x = age, y = friend_count_mean), data = pf.fc_by_age) +
+   geom_line()
+
+```
+
+***
+
+### Overlaying Summaries with Raw Data
+Notes:
+
+```{r Overlaying Summaries with Raw Data}
+
+
+#como 90% dos usuários possuem até 1000 amigos, definir o eixo y(ylim) = 1000.
+ggplot(aes(x = age, y = friend_count), data = pf) +
+  coord_cartesian(xlim = c(13, 70), ylim = c(0, 1000)) +
+  geom_point(alpha = 0.05,
+             position = position_jitter(h = 0),
+             color = 'orange') +
+  geom_line(stat = 'summary', fun.y = mean) +
+  geom_line(stat = 'summary', fun.y = quantile, fun.args = list(probs = .1),
+            linetype = 2, color = 'blue') + 
+  geom_line(stat = 'summary', fun.y = quantile, fun.args = list(probs = .5),
+             color = 'blue') +
+  geom_line(stat = 'summary', fun.y = quantile, fun.args = list(probs = .9),
+            linetype = 2, color = 'blue')
+```
+
+#### What are some of your observations of the plot?
+Response: Com a visualização, percebemos que 90% dos usuários com idade entre 35~65 anos possuem menos de 250 contatos
+
+***
+
+### Moira: Histogram Summary and Scatterplot
+See the Instructor Notes of this video to download Moira's paper on perceived audience size and to see the final plot.
+
+Notes:
+
+***
+
+### Correlation
+Notes:
+
+```{r Correlation}
+#visualizar a documentação de correlação.
+?cor.test
+
+cor.test(pf$age, pf$friend_count, method = 'pearson')
+```
+
+Look up the documentation for the cor.test function.
+
+What's the correlation between age and friend count? Round to three decimal places.
+Response: 0.0274. Isso indica que não há nenhuma relação significativa entre as duas variáveis. Uma boa regra geral é que a correlação seja > 0.3 ou < -0.3, isso demonstra uma correlação significativa, mas pequena, 0.5 é moderada e 0,7 é grande
+
+***
+
+### Correlation on Subsets
+Notes:Outra forma de calcular a correção
+
+```{r Correlation on Subsets}
+with(pf, cor.test(age, friend_count))
+```
+
+***
+
+### Correlation Methods
+Notes:
+
+***
+
+## Create Scatterplots
+Notes:
+
+```{r}
+
+ggplot(aes(x = www_likes_received, y = likes_received), data = pf) +
+   geom_point() 
+
+
+```
+
+***
+
+### Strong Correlations
+Notes:
+
+```{r Strong Correlations}
+
+ggplot(aes(x = www_likes_received, y = likes_received), data = pf) +
+  geom_point() +
+  xlim(0, quantile(pf$www_likes_received, 0.95)) +
+  ylim(0, quantile(pf$likes_received, 0.95)) +
+  geom_smooth(method = 'lm', color = 'red')
+
+```
+
+What's the correlation betwen the two variables? Include the top 5% of values for the variable in the calculation and round to 3 decimal places.
+
+```{r Correlation Calcuation}
+
+with(pf, cor.test(www_likes_received, likes_received))
+
+```
+
+Response:
+
+***
+
+### Moira on Correlation
+Notes:
+
+***
+
+### More Caution with Correlation
+Notes:
+
+```{r More Caution With Correlation}
+install.packages('alr3')
+library(alr3)
+data("Mitchell")
+?Mitchell
+```
+
+Create your plot!
+
+```{r Temp vs Month}
+ggplot(aes(x = Month, y = Temp), data = Mitchell) +
+  geom_point()
+```
+
+***
+
+### Noisy Scatterplots
+a. Take a guess for the correlation coefficient for the scatterplot.
+
+b. What is the actual correlation of the two variables?
+(Round to the thousandths place)
+
+```{r Noisy Scatterplots}
+with(Mitchell, cor.test(Month, Temp))
+```
+
+***
+
+### Making Sense of Data
+Notes:Como os dados se referem a meses, iremos agrupar em 12 meses para formar um ano e limitar de 0 até o total de meses registrados
+
+```{r Making Sense of Data}
+ggplot(data = Mitchell, aes(x = Month, y = Temp)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(0, 203, 12))
+
+
+ggplot(aes(x=(Month%%12),y=Temp),data=Mitchell)+ 
+  geom_point() 
+
+
+```
+
+***
+
+### A New Perspective
+
+What do you notice?
+Response:
+
+Watch the solution video and check out the Instructor Notes!
+Notes:
+
+***
+
+### Understanding Noise: Age to Age Months
+Notes:
+
+```{r Understanding Noise: Age to Age Months}
+
+```
+
+***
+
+### Age with Months Means
+
+```{r Age with Months Means}
+
+```
+
+Programming Assignment
+```{r Programming Assignment}
+
+```
+
+***
+
+### Noise in Conditional Means
+
+```{r Noise in Conditional Means}
+
+```
+
+***
+
+### Smoothing Conditional Means
+Notes:
+
+```{r Smoothing Conditional Means}
+
+```
+
+***
+
+### Which Plot to Choose?
+Notes:
+
+***
+
+### Analyzing Two Variables
+Reflection:
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+

@@ -1,0 +1,104 @@
+---
+title: "Estudando os dados do GapMinder"
+author: "vinicius"
+date: "17 de fevereiro de 2018"
+output: html_document
+
+
+
+---
+
+```{r setup, include=FALSE}
+library(rJava)
+library("xlsx")
+library(ggplot2)
+library(reshape2)
+
+dados <- read.xlsx("indicator_hiv.xlsx", 1)
+
+```
+
+
+
+Alterando nome de coluna 
+```{r}
+names(dados)[1]<-paste("country")
+
+```
+
+Criando um dataset novo com os paises selecionados
+```{r}
+hiv_selected_country <- subset(dados,dados$country %in% c("Australia","Brazil","China","Germany","Japan","United States"))
+
+```
+
+
+Remodela os dados colocando os anos em uma coluna chamada variable e os valores em outra coluna chamada value.
+Observações: id.vars = 1:1 significa que vai manter a primeira coluna igual, se colocase 1:2 iria manter as duas primeiras...
+```{r}
+hiv_country_stack <- melt(dados, id.vars = 1:1)
+
+```
+
+
+Formatando os dados necessários...
+```{r}
+
+#converte para character 
+hiv_country_stack$variable <- as.character(hiv_country_stack$variable)
+#remove o X na frente dos anos
+hiv_country_stack$variable <- substring(hiv_country_stack$variable, 2, nchar(hiv_country_stack$variable))
+#converte ano em data
+hiv_country_stack$variable <-  as.Date(hiv_country_stack$variable, format = "%Y")
+#muda o nome da coluna para year
+names(hiv_country_stack)[2] <- "year"
+#muda o nome da coluna
+names(hiv_country_stack)[3] <- "HIV_Percent"
+#converte character para numero
+hiv_country_stack$HIV_Percent <- as.numeric(hiv_country_stack$HIV_Percent)
+
+```
+
+
+Para iniciar a análise, é interessante plotar um histograma para entender a distribuição dos dados
+```{r}
+qplot(x = HIV_Percent, data = hiv_country_stack) +
+  scale_x_log10()
+```
+
+
+Em seguida tentei plotar um boxplot... mas como tem poucos dados, fica inviável visualizar o boxplot
+```{r}
+qplot(x=country, y=HIV_Percent,
+  data = subset(hiv_country_stack, country %in% c("Australia","Brazil","China","Germany","Japan","United States")),
+  geom = 'boxplot',
+  fill = country)+
+  scale_y_log10()
+
+```
+
+
+
+Filtrando os dados e criando um maior ou igual a 1990
+```{r}
+country_gt_1990 <- subset(hiv_country_stack, year >= as.Date("1990", format = "%Y"))
+
+```
+
+
+Plota um scaterplot 
+```{r}
+
+ggplot(data = subset(country_gt_1990, country %in% c("Australia","Brazil","China","Germany","Japan","United States")),
+   aes(x = year, y = HIV_Percent)) +
+     geom_jitter(aes(color = country), size = 2, alpha = 0.9)
+```
+
+Visualizando um gráfico de linha
+```{r}
+
+ggplot(data = subset(country_gt_1990, country %in% c("Australia","Brazil","China","Germany","Japan","United States")),
+   aes(x = year, y = HIV_Percent)) +
+     geom_line(aes(color = country), size = 1 )
+```
+

@@ -1,0 +1,312 @@
+---
+title: "Pseudo Facebook"
+author: "vinicius"
+date: "4 de fevereiro de 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Carregando dados do facebook
+```{r setup, include=FALSE}
+##verificando o local atual do workspace
+getwd()
+## alterando para o workspace desejado
+setwd('C:/Users/buiu_/Documents/Udacity/Data Science para Negócios/estudos_data_science/R/Explorar uma variavel/dados_facebook')
+#verificando quais arquivos existem no workspace
+list.files()
+#carregando os dados do facebook
+pf <- read.csv("pseudo_facebook.tsv", sep = '\t')
+```
+
+## Verificando os dados de aniversário dos usuários
+
+```{r cars}
+#instalando ggplot2
+#install.packages('ggplot2')
+library(ggplot2)
+
+#install.packages('ggthemes', dependencies = TRUE)
+library(ggthemes) 
+#verificando nomes das variáveis do dataframe
+names(pf)
+#plotando o gráfico
+theme_set(theme_minimal(12)) 
+
+ggplot(aes(x = dob_day), data = pf) + 
+  geom_histogram(binwidth = 1) + 
+  scale_x_continuous(breaks = 1:31)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+ggplot(data = pf, aes(x = dob_day)) + 
+  geom_histogram(binwidth = 1) + 
+  scale_x_continuous(breaks = 1:31) + 
+  facet_wrap(~dob_month, ncol = 3)
+
+```
+
+
+
+
+
+```{r pressure, echo=FALSE}
+ggplot(aes(x = friend_count), data = pf) + 
+  geom_histogram()
+
+#ou
+qplot(x = friend_count, data = pf, xlim = c(0, 1000))
+
+#ou
+ggplot(aes(x = friend_count), data = pf) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 1000))
+  
+  
+```
+
+
+```{r pressure, echo=FALSE}
+
+ggplot(aes(x = friend_count), data = pf) + 
+  geom_histogram(binwidth = 25) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50))
+
+#ou
+
+qplot(x = friend_count, data = pf, binwidth = 25) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50))
+
+
+```
+
+
+Na solução alternativa abaixo, o período ou ponto na fórmula para facet_grid()representa todas as outras variáveis no conjunto de dados. Essencialmente, esta notação divide os dados por gênero e produz três histogramas, cada um com sua própria linha.
+```{r pressure, echo=FALSE}
+
+
+qplot(x = friend_count, data = pf) + 
+  facet_grid(gender ~ .)
+
+#Sintaxe Ggplot Equivalente: 
+
+ggplot(aes(x = friend_count), data = pf) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  facet_wrap(~gender)
+```
+
+
+is.na remove os valores NA dos dados
+```{r pressure, echo=FALSE}
+ggplot(aes(x = friend_count), data = subset(pf, !is.na(gender))) + 
+  geom_histogram() + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  facet_wrap(~gender)
+
+```
+
+
+```{r pressure, echo=FALSE}
+
+table(pf$gender)
+
+by(pf$friend_count, pf$gender, summary)
+```
+
+Relatório de tenure por ano
+
+```{r pressure, echo=FALSE}
+
+qplot(x = tenure/365, data = pf, binwidth = .25,
+      color = I('black'), fill = I('#F79420')) +
+      scale_x_continuous(breaks = seq(1, 7, 1), limits = c(0,7))
+
+```
+
+
+
+gráfico com rótulos
+
+```{r pressure, echo=FALSE}
+qplot(x = tenure/365, data = pf,
+      xlab = 'Number of years using Facebook',
+      ylab = 'Number of users in sample',
+      color = I('black'), fill = I('#F79420')) +
+  scale_x_continuous(breaks = seq(1, 7, 1), limits = c(0, 7))
+
+#ou
+
+ggplot(aes(x = tenure / 365), data = pf) + 
+  geom_histogram(color = 'black', fill = '#F79420') + 
+  scale_x_continuous(breaks = seq(1, 7, 1), limits = c(0, 7)) + 
+  xlab('Number of years using Facebook') + 
+  ylab('Number of users in sample')
+
+```
+
+
+gráfico de idades 
+```{r pressure, echo=FALSE}
+
+#usar summary(pf$age) para descobrir algumas estatísticas sobre os dados para configurar o gráfico
+#foi escolhido 113 como valor máximo no seq pq é o maior valoe encontrado no dataset
+#
+
+qplot(x = age, data = pf, binwidth = 1,
+      xlab = 'Idade dos usuários usando Facebook',
+      ylab = 'Número de usuários na amostra',
+      color = I('black'), fill = I('#5760AB')) +
+  scale_x_continuous(breaks = seq(0, 113, 5), limits = c(13, 113))
+
+#Ou
+
+ggplot(aes(x = age), data = pf) + 
+  geom_histogram(binwidth = 1, fill = '#5760AB') + 
+  scale_x_continuous(breaks = seq(0, 113, 5))
+
+```
+
+Transformando dados 
+```{r pressure, echo=FALSE}
+install.packages('gridExtra')
+library(gridExtra)
+
+#usando qplot
+p1 <- qplot(x = friend_count, data = pf)
+#soma 1 para remover os infinitos negativos
+p2 <- qplot(x = log10(friend_count + 1), data = pf)
+p3 <- qplot(x = sqrt(friend_count), data = pf)
+grid.arrange(p1, p2, p3, ncol = 1)
+
+#usando ggplot
+
+p1 <- ggplot(aes(x = friend_count), data = pf) + geom_histogram()
+p2 <- p1 + scale_x_log10()
+p3 <- p1 + scale_x_sqrt()
+
+grid.arrange(p1, p2, p3, ncol = 1)
+
+```
+
+Usando gráfico poligno de frequência... alternativa ao histograma
+```{r pressure, echo=FALSE}
+
+qplot(x = friend_count, data = subset(pf, !is.na(gender)),
+      binwidth = 10) + 
+  scale_x_continuous(lim = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  facet_wrap(~gender)
+
+#ao invés de mostrar o total bruto, esse gráfico mostra as proporções utilizando a abordagem da váriavel y= ..count../sum(..count..)
+qplot(x = friend_count, y = ..count../sum(..count..),
+      data = subset(pf, !is.na(gender)),
+      xlab = 'Friend Count',
+      ylab = 'Proportion of Users with that friend count',
+      binwidth = 10, geom = 'freqpoly', color = gender) + 
+    scale_x_continuous(lim = c(0, 1000), breaks = seq(0, 1000, 50))
+
+#mesmo gráfico só que feito com ggplot
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)), data = subset(pf, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender), binwidth=10) + 
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) + 
+  xlab('Friend Count') + 
+  ylab('Percentage of users with that friend count')
+
+```
+
+
+
+```{r pressure, echo=FALSE}
+
+#ao invés de mostrar o total bruto, esse gráfico mostra as proporções utilizando a abordagem da váriavel y= ..count../sum(..count..)
+qplot(x = www_likes, data = subset(pf, !is.na(gender)),
+      xlab = 'Likes Count',
+      ylab = 'Percentage of likes www_likes',
+      geom = 'freqpoly', color = gender) + 
+    scale_x_log10()
+
+#mesmo gráfico só que feito com ggplot
+ggplot(aes(x = www_likes), data = subset(pf, !is.na(gender))) + 
+  geom_freqpoly(aes(color = gender)) + 
+  scale_x_log10() + 
+  xlab('Likes Count') + 
+  ylab('Percentage of likes www_likes')
+
+```
+
+
+Descobrindo quem possui mais likes: homens ou mulheres?
+```{r pressure, echo=FALSE}
+
+by(pf$www_likes, pf$gender, sum)
+
+```
+
+Gráficos de caixa
+```{r pressure, echo=FALSE}
+
+qplot(x = gender, y = friend_count,
+      data = subset(pf, !is.na(gender)),
+      geom = 'boxplot') + 
+      coord_cartesian(ylim = c(0, 250))
+
+```
+Estatística dos likes por gênero
+```{r pressure, echo=FALSE}
+
+by(pf$friend_count, pf$gender, summary)
+
+```
+
+
+Investigar quem iniciou mais amizades: homen ou mulher?
+```{r pressure, echo=FALSE}
+
+qplot(x = gender, y = friendships_initiated,
+      data = subset(pf, !is.na(gender)),
+      geom = 'boxplot') + 
+      coord_cartesian(ylim = c(0, 500))
+
+#Percebe-se que as mulheres iniciaram mais amizades, mas está é uma afirmação arriscada, porque o gráfico deixa dúvidas devido as linhas da média ficarem bem próximas.
+```
+
+Diminuir o zoom de 500 para 150 para ter mais certeza sobre quem inicou mais amizades.
+```{r pressure, echo=FALSE}
+
+qplot(x = gender, y = friendships_initiated,
+      data = subset(pf, !is.na(gender)),
+      geom = 'boxplot') + 
+      coord_cartesian(ylim = c(0, 150))
+
+#Agora fica mais claro que as mulheres iniciaram mais amizades que os homens.
+```
+
+Para saber quem, em média, iniciaram mais amizades pode ser visualizada por uma tabela:
+```{r pressure, echo=FALSE}
+
+by(pf$friendships_initiated, pf$gender, summary)
+
+#mas lembre-se que o gráfico mostra mais informações que uma simples tabela.
+
+```
+
+Descobrindo a porcentagem de pessoas curtiram algo pelo celular
+```{r pressure, echo=FALSE}
+#criando um novo atributo ao dataset
+pf$mobile_check_in <- NA
+#preenchendo o atributo
+pf$mobile_check_in <- ifelse(pf$mobile_likes > 0, 1, 0)
+#transformando em um factor
+pf$mobile_check_in <- factor(pf$mobile_check_in)
+summary(pf$mobile_check_in)
+
+#percentual de likes
+sum(pf$mobile_check_in == 1)/length(pf$mobile_check_in)
+
+#64,6% 
+
+```
