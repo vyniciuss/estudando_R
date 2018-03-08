@@ -161,7 +161,7 @@ Create your plot!
 ```{r Conditional Means Plot}
 
 
-qplot(x = age, y = fried_count_mean, data = pf.fc_by_age)
+qplot(x = age, y = friend_count_mean, data = pf.fc_by_age)
 
 qplot(x = age, y = friend_count_median, data = pf.fc_by_age)
 
@@ -341,7 +341,11 @@ Notes:
 ### Understanding Noise: Age to Age Months
 Notes:
 
+Response: Assuma que a data de referência para calcular a idade é 3 de Dezembro de 2013 e que a variáve age dá a idade em anos até o fim de 2013. A variável age_with_months no dataframe pf deve ser um valor decimal. Por exemplo, o valor age_with_months para uma pessoa de 33 anos nascida em Março deve ser 33.75 já que há nove meses de Março até o fim do ano. Similarmente, alguém que tem 6 anos e 6 meses de idade deve ter um valor de age_with_months de 6.5.
+
 ```{r Understanding Noise: Age to Age Months}
+
+pf$age_with_months <- pf$age + (1 - pf$dob_month / 12) 
 
 ```
 
@@ -350,6 +354,32 @@ Notes:
 ### Age with Months Means
 
 ```{r Age with Months Means}
+
+pf.fc_by_age_months <- pf %>%
+                        group_by(age_with_months) %>%
+                        summarise(friend_count_mean = mean(friend_count),
+                                  friend_count_median = median(friend_count),
+                                  n = n()) %>%
+                        arrange(age_with_months)
+
+#Outra forma de fazer...
+
+#agrupa os dados por age_with_months
+age_months_groups <- group_by(pf, age_with_months)
+
+#cria uma tabela com dados estatísticos  de friend_count a tabela conterá 4 variáveis: age_with_months, fried_count_mean, friend_count_median e n que representa o total de registros em cada grupo
+pf.fc_age_months <- summarise(age_months_groups,
+                      fried_count_mean = mean(friend_count),
+                      friend_count_median = median(friend_count),
+                      n = n())
+
+#com a execução da linha acima percebemos que os dados estão desordenados e precisamos ordená-los por age_with_months
+pf.fc_age_months <- arrange(pf.fc_age_months, age_with_months)
+
+
+#executa as duas funções para confirmar que estão iguais
+head(pf.fc_age_months, 2)
+head(pf.fc_by_age_months, 2)
 
 ```
 
@@ -364,6 +394,10 @@ Programming Assignment
 
 ```{r Noise in Conditional Means}
 
+ggplot(aes(x = age_with_months, y = friend_count_mean), 
+       data = subset(pf.fc_by_age_months, age_with_months < 71)) +
+   geom_line()
+
 ```
 
 ***
@@ -372,6 +406,23 @@ Programming Assignment
 Notes:
 
 ```{r Smoothing Conditional Means}
+
+p1 <- ggplot(aes(x = age, y = friend_count_mean),
+             data = subset(pf.fc_by_age, age < 71)) +
+      geom_line() +
+      geom_smooth()
+
+p2 <- ggplot(aes(x = age_with_months, y = friend_count_mean),
+             data = subset(pf.fc_by_age_months, age_with_months < 71)) +
+      geom_line() +
+      geom_smooth()
+
+p3 <- ggplot(aes(x = round(age / 5) * 5, y = friend_count),
+             data = subset(pf, age < 71)) +
+      geom_line(stat = 'summary', fun.y = mean)
+
+library(gridExtra)
+grid.arrange(p2, p1, p3, ncol = 1)
 
 ```
 
