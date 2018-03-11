@@ -244,6 +244,14 @@ ggplot(aes(x = 90 * round(tenure / 90), y = friendships_initiated / tenure),
             stat = "summary",
             fun.y = mean)
 
+
+
+#versão que adiciona uma versão mais suave a linha para evitar as fórmulas usadas para amenizar os ruídos 
+#O R irá escolher os métodos estatísticos apropriados com base nos dados.
+ggplot(aes(x = tenure, y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_smooth(aes(color = year_joined.bucket))
+
 ```
 
 ***
