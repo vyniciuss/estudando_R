@@ -88,7 +88,7 @@ spread(subset(pf.fc_by_age_gender, select = c('gender', 'age', 'median_friend_co
 Notes:
 
 ```{r}
-install.packages('reshape2')
+#install.packages('reshape2')
 library(reshape2)
 library(tidyr)
 #remodelagem usando dplyr e tidyr
@@ -271,6 +271,15 @@ Notes:
 
 ```{r Histograms Revisited}
 
+yo <- read.csv("yogurt.csv")
+
+yo$id <- as.factor(yo$id)
+
+str(yo)
+
+ggplot(aes(x = price),  data = yo) +
+  geom_histogram(binwidth = 10)
+
 ```
 
 ***
@@ -280,15 +289,19 @@ Notes:
 
 ```{r Number of Purchases}
 
+yo <- transform(yo, all.purchases = strawberry + blueberry + pina.colada + plain + mixed.berry)
+
+summary(yo$all.purchases)
 ```
 
 ***
 
 ### Prices over Time
-Notes:
+Notes: Ao analisar o gráfico, vemos que o modelo ou os preços mais comuns parecem aumentar ao longo do tempo. Os pontos baixos podem ser devido aos cupons de desconto que diminui o preço do iogurte.
 
 ```{r Prices over Time}
-
+  ggplot(aes(x = time, y = price), data = yo) +
+    geom_jitter(alpha = 1/4, shape = 21, fill = I('#F79420'))
 ```
 
 ***
@@ -302,6 +315,14 @@ Notes:
 
 ```{r Looking at Sample of Households}
 
+set.seed(4230)
+sample.ids <- sample(levels(yo$id), 16)
+
+ggplot(aes(x = time, y = price), 
+       data = subset(yo, id %in% sample.ids)) +
+      facet_wrap( ~ id) +
+      geom_line() +
+      geom_point(aes(size = all.purchases), pch = 1)
 ```
 
 ***
@@ -318,6 +339,22 @@ Notes:
 
 ### Scatterplot Matrix
 Notes:
+
+```{r}
+#install.packages('prettyunits')
+#install.packages('GGally')
+library('GGally')
+library('prettyunits')
+#library('devtools')
+set.seed(1836)
+pf_subset <- pf[, c(2:15)]
+names(pf_subset)
+
+p <- ggpairs(pf_subset[sample.int(nrow(pf_subset), 1000), ])
+suppressMessages(print(p))
+
+```
+
 
 ***
 
